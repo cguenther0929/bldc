@@ -1,0 +1,10 @@
+# List of folders & file names/extensions to be ignored by the git repository.
+src/stdbool.h
+src/stdint.h
+src/pic18f66k22.h
+
+BLDC.X/funclist
+BLDC.X/l.obj
+BLDC.X/build
+BLDC.X/dist
+BLDC.X/nbproject/*
