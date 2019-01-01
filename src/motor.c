@@ -36,18 +36,14 @@ void MotAlignment( void ) {
     tick10msDelay(1);
 }
 
-void OpenLoopStart ( void ) {     //TODO this needs some major work
-    uint16_t Curren10msTick;
-    uint8_t t4_period;  
-    uint16_t delay_reduction;  
-    uint16_t i;                     //TODO delete later debug only   
-    uint8_t rpm_ramp_rate;                     //TODO delete later debug only   
-    uint16_t tmr1_reg_setting;
-    uint8_t tmr1_reg_lo;
-    uint8_t tmr1_reg_hi;
-    uint32_t j;                     //TODO delete later debug only   
-    uint32_t delay_tick;                     //TODO delete later debug only   
+void OpenLoopStart ( void ) {     
+    uint8_t     t4_period;
+    uint8_t     duty_cycle;  
+    uint16_t    i;                          // Using counter 
+    bool        inc_duty_flag = true;       // Prevent rapid attempts at increasing duty cycle when RPM conditions are met
+    
     gblinfo.motor_rpm = START_RPM;
+    duty_cycle = START_DUTY;                // Increase the duty_cycle as the RPM increases
 
     PWM1EnableOuts('a');                    // P1A pin has output pin
     PWM1_SetDutyCycle(START_DUTY);          // Will have to see if this is a reasonable value
@@ -57,8 +53,8 @@ void OpenLoopStart ( void ) {     //TODO this needs some major work
     gblinfo.comu_state = DRV_B2A;           // Define initial commutate state
     UpdateMotorOutputs();
 
-    delay_tick = 3307;                      // Derived from Excel calculator for 10RPM start
-    delay_reduction = 300;
+    // delay_tick = 3307;                      // Derived from Excel calculator for 10RPM start
+    // delay_reduction = 300;
 
     // for(i=0;i<500;i++) {
     //     for(j=0;j<delay_tick;j++);
@@ -109,7 +105,7 @@ void OpenLoopStart ( void ) {     //TODO this needs some major work
     //         PWM1_SetDutyCycle(20);
     // }
 
-    rpm_ramp_rate = OL_RAMP_RATE;
+    // rpm_ramp_rate = OL_RAMP_RATE;
     
     while(gblinfo.motor_rpm <= OL_MAX_RPM){  //In loop until we hit the "started" RPM
 
@@ -124,22 +120,45 @@ void OpenLoopStart ( void ) {     //TODO this needs some major work
             UpdateMotorOutputs();
         }
         
-        gblinfo.motor_rpm += rpm_ramp_rate;
-        if(gblinfo.motor_rpm >= 200 && gblinfo.motor_rpm < 500){
+        gblinfo.motor_rpm += OL_RAMP_RATE;
+
+        if(gblinfo.motor_rpm >= 200 && gblinfo.motor_rpm < 400 && inc_duty_flag) {
             // ALO_LED = ledon;
-            PWM1_SetDutyCycle(15);
+            duty_cycle += 2;
+            PWM1_SetDutyCycle(duty_cycle);
+            inc_duty_flag = false;
         }
-        if(gblinfo.motor_rpm >= 500 && gblinfo.motor_rpm < 800){
+        
+        else if(gblinfo.motor_rpm >= 400 && gblinfo.motor_rpm < 600 && !inc_duty_flag) {
+            // ALO_LED = ledon;
+            duty_cycle += 2;
+            PWM1_SetDutyCycle(duty_cycle);
+            inc_duty_flag = true;
+        }
+        
+        else if(gblinfo.motor_rpm >= 600 && gblinfo.motor_rpm < 800 && inc_duty_flag) {
             // BLO_LED = ledon;
-            PWM1_SetDutyCycle(20);
+            duty_cycle += 2;
+            PWM1_SetDutyCycle(duty_cycle);
+            inc_duty_flag = false;
         }
-        if(gblinfo.motor_rpm >= 800){
+        
+        else if(gblinfo.motor_rpm >= 800 && gblinfo.motor_rpm < 1000 && !inc_duty_flag) {
+            // BLO_LED = ledon;
+            duty_cycle += 2;
+            PWM1_SetDutyCycle(duty_cycle);
+            inc_duty_flag = true;
+        }
+        
+        else if(gblinfo.motor_rpm >= 1000 && inc_duty_flag) {
             // CLO_LED = ledon;
-            PWM1_SetDutyCycle(25);
-            rpm_ramp_rate = OL_RAMP_RATE - 10;
+            duty_cycle += 2;
+            PWM1_SetDutyCycle(duty_cycle);
+            inc_duty_flag = false;
         }
     }
 
+    tick100msDelay(50);         //  Small delay so the last state remains driven.  
     gblinfo.motor_run_mode = NORMAL_RUN;        //Motor is now in normal run mode
     AHI_DRV = BHI_DRV = CHI_DRV = ALO_DRV = BLO_DRV = CLO_DRV = 0; // TODO debugging only!
     TMR4IF = 0;
@@ -213,49 +232,49 @@ void TestCommutate(void) {
     uint16_t i;
     AHI_DRV = ALO_DRV = BHI_DRV = BLO_DRV = CHI_DRV = CLO_DRV = 0;
     PWM1EnableOuts('a');        //P1A pin has output pin
-    PWM1_SetDutyCycle(5);      //Enter value in percent
+    PWM1_SetDutyCycle(25);      //Enter value in percent
     tick10msDelay(1);
     MotAlignment();
     
     for(i=0;i<7;i++) {
         BHI_DRV = 1; BHI_LED = ledon;               //B -> A
         ALO_DRV = 1; ALO_LED = ledon;                
-        tick10msDelay(3);
+        tick10msDelay(10);
         AHI_LED = ALO_LED = BHI_LED = BLO_LED = CHI_LED = CLO_LED = ledoff;
         AHI_DRV = ALO_DRV = BHI_DRV = BLO_DRV = CHI_DRV = CLO_DRV = 0;
         NOP();
 
         CHI_DRV = 1; CHI_LED = ledon;               //C -> A
         ALO_DRV = 1; ALO_LED = ledon;               
-        tick10msDelay(3);
+        tick10msDelay(10);
         AHI_DRV = ALO_DRV = BHI_DRV = BLO_DRV = CHI_DRV = CLO_DRV = 0;
         AHI_LED = ALO_LED = BHI_LED = BLO_LED = CHI_LED = CLO_LED = ledoff;
         NOP();
         
         CHI_DRV = 1; CHI_LED = ledon;                //C -> B
         BLO_DRV = 1; BLO_LED = ledon;               
-        tick10msDelay(3);
+        tick10msDelay(10);
         AHI_DRV = ALO_DRV = BHI_DRV = BLO_DRV = CHI_DRV = CLO_DRV = 0;
         AHI_LED = ALO_LED = BHI_LED = BLO_LED = CHI_LED = CLO_LED = ledoff;
         NOP();
         
         AHI_DRV = 1; AHI_LED = ledon;                //A -> B
         BLO_DRV = 1; BLO_LED = ledon;               
-        tick10msDelay(3);
+        tick10msDelay(10);
         AHI_DRV = ALO_DRV = BHI_DRV = BLO_DRV = CHI_DRV = CLO_DRV = 0;
         AHI_LED = ALO_LED = BHI_LED = BLO_LED = CHI_LED = CLO_LED = ledoff;
         NOP();
         
         AHI_DRV = 1; AHI_LED = ledon;                //A -> C
         CLO_DRV = 1; CLO_LED = ledon;               
-        tick10msDelay(3);
+        tick10msDelay(10);
         AHI_DRV = ALO_DRV = BHI_DRV = BLO_DRV = CHI_DRV = CLO_DRV = 0;
         AHI_LED = ALO_LED = BHI_LED = BLO_LED = CHI_LED = CLO_LED = ledoff;
         NOP();
         
         BHI_DRV = 1; BHI_LED = ledon;                //B -> C
         CLO_DRV = 1; CLO_LED = ledon;
-        tick10msDelay(3);
+        tick10msDelay(10);
         AHI_DRV = ALO_DRV = BHI_DRV = BLO_DRV = CHI_DRV = CLO_DRV = 0;
         AHI_LED = ALO_LED = BHI_LED = BLO_LED = CHI_LED = CLO_LED = ledoff;
         NOP();

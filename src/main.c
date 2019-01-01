@@ -183,7 +183,7 @@ void SetUp(void)
     Timer1Off();
     
     /* TIMER FOR APPLICATION INTERRUPTS */
-    Timer0Init(1, 16, 0); //ARGS: interrupts = yes, prescaler = 16, clksource = FOSC/4 (8MHz / 4 in this application)
+    Timer0Init(1, 256, 0); //ARGS: interrupts = yes, prescaler = 256, clksource = FOSC/4
     Timer0On();             
 }
 

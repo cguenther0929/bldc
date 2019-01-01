@@ -26,7 +26,7 @@
 #include "config.h"     //Project specific header file
 #include "timer.h"
 #include "adc.h"
-#include "uart.h"
+// #include "uart.h"
 #include "pwm.h"
 #include "motor.h"
 

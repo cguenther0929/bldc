@@ -44,7 +44,8 @@ void Init_Interrupts( void );
 *POSTCONDITION: Interrupt respond to and flag cleared
 *RETURN: Nothing
 ********************************************************/
-void interrupt low_priority main_isr( void );
+// void interrupt low_priority main_isr( void );
+__interrupt (low_priority) void main_isr( void );
 
 /********************************************************
 *FUNCTION: void interrupt high_priority edges_isr( void )
@@ -54,7 +55,8 @@ void interrupt low_priority main_isr( void );
 *POSTCONDITION: Interrupt respond to and flag cleared
 *RETURN: Nothing
 ********************************************************/
-void interrupt high_priority edges_isr( void );
+// void interrupt high_priority edges_isr( void );
+__interrupt (high_priority) void edges_isr( void );
 
 /********************************************************
 *FUNCTION: void DisableInterrupts( void )

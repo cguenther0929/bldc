@@ -31,7 +31,7 @@
 *POSTCONDITION: Timer 1 is ready to use
 *RETURN: Nothing
 ********************************************************/
-void Timer0Init(uint8_t interrupts, uint8_t prescaler, uint8_t clksource ) ;
+void Timer0Init(uint8_t interrupts, uint16_t prescaler, uint8_t clksource ) ;
 
 /********************************************************
 *FUNCTION: void Timer0On( void )
@@ -133,7 +133,7 @@ void Timer3Off( void );
 *POSTCONDITION: Timer 4 now initialized
 *RETURN: Nothing
 ********************************************************/
-void Timer4Init( bool interrupts, uint8_t prescaler, bool clksource );
+void Timer4Init( bool interrupts, uint8_t prescaler, uint8_t clksource );
 
 /********************************************************
 *FUNCTION: void Timer4On(uint8_t period)

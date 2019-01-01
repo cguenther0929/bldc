@@ -62,7 +62,8 @@ void PORTBINTSetup( uint8_t channel, bool edge_rising, bool highpri ) {
 
 }
 
-void interrupt high_priority edges_isr( void ) {     
+// void interrupt high_priority edges_isr( void ) {     
+__interrupt (high_priority) void edges_isr( void ) {     
     
     if(INTCONbits.INT0IF){
         INTCONbits.INT0IF = 0;
@@ -83,7 +84,8 @@ void interrupt high_priority edges_isr( void ) {
 
 }
 
-void interrupt low_priority main_isr( void ) {
+// void interrupt low_priority main_isr( void ) {
+__interrupt (low_priority) void main_isr( void ) {
 
     uint8_t temp = 0;
     

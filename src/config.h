@@ -24,7 +24,7 @@
 #include <xc.h>
 
 /* PREPROCESSOR CALCULATION TO DETERMINE TIMER4'S INCREMENT RATE */
-#define T4_Osc_Freq                     7372800                    //Oscillator used for MCU
+#define T4_Osc_Freq                     32768000               //Oscillator used for MCU
 #define T4_prescaler                    16.0
 #define T4_postscaler                   16.0
 #define T4_FOSCBY4                      (T4_Osc_Freq/4.0)
@@ -60,8 +60,8 @@
 #define CLO_DRV             LATEbits.LATE5
 
 /* DEFINES FOR LED PINS */
-#define COMU_LED            LATCbits.LATC3          //For driving the commutate LED
-#define HEALTH_LED          LATCbits.LATC4          //For driving health LED
+#define COMU_LED            LATCbits.LATC4          //For driving the commutate LED
+#define HEALTH_LED          LATCbits.LATC3          //For driving health LED
 
 #define AHI_LED             LATFbits.LATF7          //Pins for driving commutate state indicators             
 #define BHI_LED             LATGbits.LATG0
@@ -79,8 +79,8 @@
 #define MOT_CURRENT         4           //Analog channel for reading motor current
 
 /* REGISTER VALUES FOR 10MS TIME BASE */         
-#define TMR0HIGH            251         //32.768MHz with 256 prescaler and an interrupt every 10ms // 7.3728MHz with 16 prescaler at 10ms until the 32.768MHz oscillator shows up
-#define TMR0LOW             127        
+#define TMR0HIGH            254         //32.768MHz with 256 prescaler and an interrupt every 10ms // 7.3728MHz with 16 prescaler at 10ms until the 32.768MHz oscillator shows up
+#define TMR0LOW             191        
 
 
 /* DEFINE VARIOUS PIN FUNCITONS */
@@ -125,8 +125,8 @@
 
 /* VARIOUS MOTOR PARAMETERS */
 #define OL_RAMP_RATE        20          //Increase the RPM value by this much every 500us 
-#define OL_MAX_RPM          1000        //When this RPM value is achieved in OL start, transition to closed-loop run
-#define START_RPM           100         //Open loop start task will use this as the starting RPM -- ramps up from here
+#define OL_MAX_RPM          2000        //When this RPM value is achieved in OL start, transition to closed-loop run
+#define START_RPM           180         //Open loop start task will use this as the starting RPM -- ramps up from here
 #define START_DUTY          10          //Duty cycle percent for when starting motor
 
 /* LED CONTROL */

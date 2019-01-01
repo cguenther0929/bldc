@@ -23,7 +23,7 @@
 #include <stdbool.h>
 #include "config.h"
 #include "struct.h"
-#include "uart.h"
+// #include "uart.h"
 #include "math.h"
 
 /* The following preprocessor calculations have been proven to work.  Let the float values be floats since
