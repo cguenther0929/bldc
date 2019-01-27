@@ -9,7 +9,7 @@
 *
 *   IDE: MPLAB X v3.45
 *
-*   TODO:  
+*   TODO:  When reading from timer one in 16bit mode, we must read from the LOW byte first!
 *
 *   NOTE:
 *
@@ -88,14 +88,14 @@ void main()
     uint16_t i;
     SetUp();
     while (true) {
-        // for(i=0;i < 60000;i++);
-        // for(i=0;i < 60000;i++);
         if(PB1 == 0){
             TestCommutate();
             tick100msDelay(10);
         }
         if(PB2 == 0) {
             OpenLoopStart();
+            ClosedLoopRun();
+            
             tick100msDelay(10);
         }
     }
@@ -108,21 +108,21 @@ void SetUp(void)
     TRISA5 = input;
     
     /* PIN DIRECTION FOR LEDS */
-    TRISC3 = output;        //Output for commutate LED
-    TRISC4 = output;        //Health LED
+    TRISC3 = output;                    //Output for commutate LED
+    TRISC4 = output;                    //Health LED
 
-    TRISF7 = output;        //Drives LED for A HI indicator
-    TRISG0 = output;        //Drives LED for B HI indicator
-    TRISG1 = output;        //Drives LED for C HI indicator
-    TRISG2 = output;        //Drives LED for A LO indicator
-    TRISG3 = output;        //Drives LED for B LO indicator
-    TRISG4 = output;        //Drives LED for C LO indicator
+    TRISF7 = output;                    //Drives LED for A HI indicator
+    TRISG0 = output;                    //Drives LED for B HI indicator
+    TRISG1 = output;                    //Drives LED for C HI indicator
+    TRISG2 = output;                    //Drives LED for A LO indicator
+    TRISG3 = output;                    //Drives LED for B LO indicator
+    TRISG4 = output;                    //Drives LED for C LO indicator
 
     /* PIN DIRECTION FOR MOTOR DRIVER */
-    TRISB0 = input;         //Digital input for A phase crossed 
-    TRISB1 = input;         //Digital input for B phase crossed
-    TRISB2 = input;         //Digital input for C phase crossed
-    TRISC2 = output;        //Motor PWM output
+    TRISB0 = input;                     //Digital input for A phase crossed 
+    TRISB1 = input;                     //Digital input for B phase crossed
+    TRISB2 = input;                     //Digital input for C phase crossed
+    TRISC2 = output;                    //Motor PWM output
 
     TRISE0 = output;                    // A HI Gate Driver control pin           
     TRISE1 = output;                    // B HI Gate Driver control pin 
@@ -135,10 +135,9 @@ void SetUp(void)
     ALO_DRV = BLO_DRV = CLO_DRV = 0;    // For safety, turn these off now
 
     /* PIN DIRECTION FOR PUSH BUTTONS */
-    TRISD0 = input;         // Push Button 1 input
-    TRISD1 = input;         // Push Button 2 input
-    TRISD2 = input;         // Push Button 3 input   
-
+    TRISD0 = input;                     // Push Button 1 input
+    TRISD1 = input;                     // Push Button 2 input
+    TRISD2 = input;                     // Push Button 3 input   
     
     /* INITIAL CONDITION OF COMMUTATE LEDS */
     AHI_LED = ledoff;
@@ -174,11 +173,11 @@ void SetUp(void)
 	Timer2Init(0,PWM_Timer_Prescaler,1);  		//Args: Interrupts, Prescaler, Postscaler
 	Timer2On(PWM_Timer_PR_Value);				//Args: Period register unsigned char
 
-    /* SETUP TIMER FOR MEASRUING COMMUTATE POINTS */
+    /* SETUP TIMER FOR OPEN LOOP STARTING */
     Timer4Init(0,T4_prescaler,T4_postscaler);        //ARGS: No Interrupts; Prescaler of 16; Postscaler of 16
     Timer4Off();
     
-    /* SETUP TIMER FOR OPEN LOOP STARTING */
+    /* SETUP TIMER FOR COMMUTATE POINTS */
     Timer1Init(0,8,0);  // 0 = Do not cause interrupts, 8 = prescaler value (max value), 0 = clock source (set to internal Fosc/4)
     Timer1Off();
     

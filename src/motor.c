@@ -40,6 +40,7 @@ void OpenLoopStart ( void ) {
     uint8_t     t4_period;
     uint8_t     duty_cycle;  
     uint16_t    i;                          // Using counter 
+    uint16_t    j;                          // Using counter 
     bool        inc_duty_flag = true;       // Prevent rapid attempts at increasing duty cycle when RPM conditions are met
     
     gblinfo.motor_rpm = START_RPM;
@@ -50,63 +51,11 @@ void OpenLoopStart ( void ) {
     MotAlignment();
     gblinfo.motor_run_mode = OPEN_LOOP_START;
 
+    // COMU_LED = ledon;                       // Active low signal, so pull low
+
     gblinfo.comu_state = DRV_B2A;           // Define initial commutate state
     UpdateMotorOutputs();
 
-    // delay_tick = 3307;                      // Derived from Excel calculator for 10RPM start
-    // delay_reduction = 300;
-
-    // for(i=0;i<500;i++) {
-    //     for(j=0;j<delay_tick;j++);
-    //     // UpdateComuState();
-    //     // UpdateMotorOutputs();
-    //     AHI_LED = ~AHI_LED;             // TODO DEBUG ONLY
-    // }
-
-    // while (delay_tick > 30) {
-    //     for(i=0;i<42;i++) {
-    //         for(j=0;j<delay_tick;j++);
-    //         UpdateComuState();
-    //         UpdateMotorOutputs();
-    //         AHI_LED = ~AHI_LED;             // TODO DEBUG ONLY
-    //     }
-    //     delay_tick -= delay_reduction;
-    // }
-
-    // for(i=0;i<5000;i++) {                   // Run at this speed for a while
-    //     for(j=0;j<delay_tick;j++);
-    //     UpdateComuState();
-    //     UpdateMotorOutputs();
-    //     AHI_LED = ~AHI_LED;                 // TODO DEBUG ONLY
-    // }
-
-    // while(gblinfo.motor_rpm <= OL_MAX_RPM){  //In loop until we hit the "started" RPM
-    //     tmr1_reg_setting = 54015;
-    //     tmr1_reg_hi = (uint8_t)(tmr1_reg_setting / 256);
-    //     tmr1_reg_lo = (uint8_t)(tmr1_reg_setting % 256);
-
-    //     TMR1IE = 0;
-    //     TMR1IF = 0;
-    //     Timer1On(tmr1_reg_hi,tmr1_reg_lo);                                          //register values set for 20ms
-    //     t4_period = (uint8_t)(TICKS_SCALER / gblinfo.motor_rpm);    //Define interrupts_per_second for commutation 
-        
-    //     while(TMR1IF == 0){         //Run at this RPM until 500us timer expires
-    //         Timer4On(t4_period);       
-    //         while(TMR4IF == 0);
-    //         TMR4IF = 0;
-    //         AHI_LED = ~AHI_LED;             //TODO DEBUG ONLY
-    //         UpdateComuState();
-    //         UpdateMotorOutputs();
-    //     }
-        
-    //     BHI_LED = ~BHI_LED;
-    //     gblinfo.motor_rpm += OL_RAMP_RATE;
-    //     if(gblinfo.motor_rpm >= 1000)
-    //         PWM1_SetDutyCycle(20);
-    // }
-
-    // rpm_ramp_rate = OL_RAMP_RATE;
-    
     while(gblinfo.motor_rpm <= OL_MAX_RPM){  //In loop until we hit the "started" RPM
 
         t4_period = (uint8_t)(TICKS_SCALER / gblinfo.motor_rpm);    //Define interrupts_per_second for commutation 
@@ -115,7 +64,6 @@ void OpenLoopStart ( void ) {
             Timer4On(t4_period);       
             while(TMR4IF == 0);
             TMR4IF = 0;
-            // AHI_LED = ~AHI_LED;             // TODO DEBUG ONLY
             UpdateComuState();
             UpdateMotorOutputs();
         }
@@ -123,44 +71,71 @@ void OpenLoopStart ( void ) {
         gblinfo.motor_rpm += OL_RAMP_RATE;
 
         if(gblinfo.motor_rpm >= 200 && gblinfo.motor_rpm < 400 && inc_duty_flag) {
-            // ALO_LED = ledon;
             duty_cycle += 2;
             PWM1_SetDutyCycle(duty_cycle);
             inc_duty_flag = false;
         }
         
         else if(gblinfo.motor_rpm >= 400 && gblinfo.motor_rpm < 600 && !inc_duty_flag) {
-            // ALO_LED = ledon;
             duty_cycle += 2;
             PWM1_SetDutyCycle(duty_cycle);
             inc_duty_flag = true;
         }
         
         else if(gblinfo.motor_rpm >= 600 && gblinfo.motor_rpm < 800 && inc_duty_flag) {
-            // BLO_LED = ledon;
-            duty_cycle += 2;
+            duty_cycle += 3;
             PWM1_SetDutyCycle(duty_cycle);
             inc_duty_flag = false;
         }
         
         else if(gblinfo.motor_rpm >= 800 && gblinfo.motor_rpm < 1000 && !inc_duty_flag) {
-            // BLO_LED = ledon;
-            duty_cycle += 2;
+            duty_cycle += 3;
             PWM1_SetDutyCycle(duty_cycle);
             inc_duty_flag = true;
         }
         
-        else if(gblinfo.motor_rpm >= 1000 && inc_duty_flag) {
-            // CLO_LED = ledon;
-            duty_cycle += 2;
+        else if(gblinfo.motor_rpm >= 1000  && gblinfo.motor_rpm < 1300 && inc_duty_flag) {
+            duty_cycle += 4;
+            PWM1_SetDutyCycle(duty_cycle);
+            inc_duty_flag = false;
+        }
+        
+        else if(gblinfo.motor_rpm >= 1400  && gblinfo.motor_rpm < 1600 && !inc_duty_flag) {
+            duty_cycle += 4;
+            PWM1_SetDutyCycle(duty_cycle);
+            inc_duty_flag = true;
+        }
+        
+        else if(gblinfo.motor_rpm >= 1700 && inc_duty_flag) {
+            duty_cycle += 4;
             PWM1_SetDutyCycle(duty_cycle);
             inc_duty_flag = false;
         }
     }
 
-    tick100msDelay(50);         //  Small delay so the last state remains driven.  
+    // Since it's a 14 pole motor, one revolution = 7*6 or 42 interrupts
+    // TODO can we remove the following?  The foolowing was put in for debugging only.
+    // i = 0;      //Reset the counter
+    // while(true){
+    //     Timer4On(t4_period);       
+    //     while(TMR4IF == 0);
+    //     TMR4IF = 0;
+    //     UpdateComuState();
+    //     UpdateMotorOutputs();
+        
+    //     if(i > 420 && gblinfo.comu_state == DRV_B2C){
+    //         COMU_LED = ledoff;          
+    //         // for(j=0;j<483;j++);       // Delay for approximately how long to drive previous state for 2000 RMP (derived empirically)
+    //         for(j=0;j<1500;j++);       // Delay for approximately how long to drive previous state for 2000 RMP (derived empirically)
+    //         break;
+    //     }
+    //     i++;
+    // }
+    
+    // AHI_DRV = BHI_DRV = CHI_DRV = ALO_DRV = BLO_DRV = CLO_DRV = 0;          // May want to remove this line
+    // AHI_LED = BHI_LED = CHI_LED = ALO_LED = BLO_LED = CLO_LED = ledoff;     // May want to remove this line
+    
     gblinfo.motor_run_mode = NORMAL_RUN;        //Motor is now in normal run mode
-    AHI_DRV = BHI_DRV = CHI_DRV = ALO_DRV = BLO_DRV = CLO_DRV = 0; // TODO debugging only!
     TMR4IF = 0;
     Timer4Off();
 
@@ -195,37 +170,300 @@ void UpdateComuState( void ) {
 }
 
 void UpdateMotorOutputs ( void ){
-    AHI_DRV = BHI_DRV = CHI_DRV = ALO_DRV = BLO_DRV = CLO_DRV = 0; // Reset FET outputs, and some deadband
-    AHI_LED = BHI_LED = CHI_LED = ALO_LED = BLO_LED = CLO_LED = ledoff; // Reset FET outputs, and some deadband
+    AHI_LED = BHI_LED = CHI_LED = ALO_LED = BLO_LED = CLO_LED = ledoff; 
     
     switch(gblinfo.comu_state){
-        case DRV_B2A:
-            BHI_DRV = 1; BHI_LED = ledon;
+        case DRV_B2A:                       // Previous step was B -> C. New step B -> A  
+            AHI_DRV = CHI_DRV = 0;
+            CLO_DRV = BLO_DRV = 0;
+            
+            BHI_DRV = 1; BHI_LED = ledon;   
+            NOP();
+            NOP();
             ALO_DRV = 1; ALO_LED = ledon;
+            
             break;
-        case DRV_C2A:
+        case DRV_C2A:                       // Previous step was B -> A. New step C -> A
+            AHI_DRV = BHI_DRV = 0;
+            CLO_DRV = BLO_DRV = 0;          
+            
+            ALO_DRV = 1; ALO_LED = ledon;   
+            NOP();
+            NOP();
             CHI_DRV = 1; CHI_LED = ledon;
-            ALO_DRV = 1; ALO_LED = ledon;
+            
             break;
-        case DRV_C2B:
+        case DRV_C2B:                       // Previous step was C -> A.  New step C -> B
+            AHI_DRV = BHI_DRV = 0;
+            ALO_DRV = CLO_DRV = 0;          
+            
             CHI_DRV = 1; CHI_LED = ledon;
+            NOP();
+            NOP();
             BLO_DRV = 1; BLO_LED = ledon;
+            
             break;
-        case DRV_A2B:
+        case DRV_A2B:                       // Previous step was C -> B. New step A -> B
+            BHI_DRV = CHI_DRV =0;
+            ALO_DRV = CLO_DRV = 0;
+            
+            BLO_DRV = 1; BLO_LED = ledon;
+            NOP();
+            NOP();
             AHI_DRV = 1; AHI_LED = ledon;   
-            BLO_DRV = 1; BLO_LED = ledon;
+            
             break;
-        case DRV_A2C:
+        case DRV_A2C:                       // Previous step was A -> B. New step A -> C
+            BHI_DRV = CHI_DRV = 0;
+            ALO_DRV = BLO_DRV = 0;
+            
             AHI_DRV = 1; AHI_LED = ledon;
+            NOP();
+            NOP();
             CLO_DRV = 1; CLO_LED = ledon;
+            
             break;
-        case DRV_B2C:
-            BHI_DRV = 1; BHI_LED = ledon;
+        case DRV_B2C:                       // Previous step was A -> C. New step B -> C
+            AHI_DRV = CHI_DRV = 0;
+            ALO_DRV = BLO_DRV = 0;
+            
             CLO_DRV = 1; CLO_LED = ledon;
+            NOP();
+            NOP();
+            BHI_DRV = 1; BHI_LED = ledon;
+            
+            break;
         default:
-            AHI_DRV = BHI_DRV = CHI_DRV = ALO_DRV = BLO_DRV = CLO_DRV = 0; // Reset FET outputs, and some deadband
+            AHI_DRV = BHI_DRV = CHI_DRV = ALO_DRV = BLO_DRV = CLO_DRV = 0;          
+            AHI_LED = BHI_LED = CHI_LED = ALO_LED = BLO_LED = CLO_LED = ledoff;
+            break;
 
     }
+    Timer1On(0,0);      //Start counting after a commutate switch.  
+}
+
+void ClosedLoopRun( void ) {
+    uint16_t ctrval             = 0x0000;
+    uint16_t ct_reg_val         = 0x0000;
+    uint16_t rntime             = 0x0000;
+    unsigned long pwm_width     = 0x00000000;  //Use large counters here in hopes to make math easier for processor
+    unsigned long xovr_width    = 0x00000000;
+    unsigned long target_width  = 0x00000000;
+
+    DisableInterrupts();            //TODO debugging only 
+    for(rntime=0;rntime<4200;rntime++){
+
+        switch (gblinfo.comu_state) {
+            case DRV_B2A:               // XOVR is Low and undriven phase is C.  Need to monitor at begining of pulse.
+                while(true){
+                    pwm_width = 0;
+                    xovr_width = 0;
+                    while(PWM_STATE){
+                        COMU_LED = ~COMU_LED;
+                        if(!CPH_CROSSED){
+                            pwm_width++;
+                            xovr_width++;
+                        }
+                        else
+                        {
+                            pwm_width++;
+                        }
+                    }
+
+                    target_width = (pwm_width * TARGET_XOVR_PRCNT);         // Multiply by target percent (x10, so 900 for 90%)
+                    target_width = (target_width >> 10);                                    // Divide by ~ 100*10 (2^10 = 1024)
+                    
+                    /* See if the midway point of the commutate switch has been found */
+                    if(xovr_width >= target_width){
+                        ct_reg_val = 0xFFFF - Timer1CtrVal();
+                        Timer1On16b(ct_reg_val);
+                        
+                        /* Wait for the switch point to come around */
+                        while(TMR1IF);
+                        UpdateComuState();
+                        UpdateMotorOutputs();
+                        break;
+                    }
+                }
+
+            break;
+            
+            case DRV_C2A:           // XOVR is HIGH and undriven phase is B.  Need to monitor near end of pulse
+                while(true){
+                    pwm_width = 0;
+                    xovr_width = 0;
+                    while(PWM_STATE){
+                        COMU_LED = ~COMU_LED;
+                        if(BPH_CROSSED){
+                            pwm_width++;
+                            xovr_width++;
+                        }
+                        else
+                        {
+                            pwm_width++;
+                        }
+                    }
+
+                    target_width = (pwm_width * TARGET_XOVR_PRCNT);         // Multiply by target percent (x10, so 900 for 90%)
+                    target_width = (target_width >> 10);                                    // Divide by ~ 100*10 (2^10 = 1024)
+                    // target_width >>= 10;                                    // Divide by ~ 100*10 (2^10 = 1024)
+                    
+                    /* See if the midway point of the commutate switch has been found */
+                    if(xovr_width >= target_width){
+                        ct_reg_val = 0xFFFF - Timer1CtrVal();
+                        Timer1On16b(ct_reg_val);
+                        
+                        /* Wait for the switch point to come around */
+                        while(TMR1IF);
+                        UpdateComuState();
+                        UpdateMotorOutputs();
+                        break;
+                    }
+                }
+                
+            break;
+            
+            case DRV_C2B:           // XOVR is LOW and undriven phase is A.  Need to monitor near begining of pulse
+                while(true){
+                    pwm_width = 0;
+                    xovr_width = 0;
+                    while(PWM_STATE){
+                        COMU_LED = ~COMU_LED;
+                        if(!APH_CROSSED){
+                            pwm_width++;
+                            xovr_width++;
+                        }
+                        else
+                        {
+                            pwm_width++;
+                        }
+                    }
+
+                    target_width = (pwm_width * TARGET_XOVR_PRCNT);         // Multiply by target percent (x10, so 900 for 90%)
+                    target_width = (target_width >> 10);                                    // Divide by ~ 100*10 (2^10 = 1024)
+                    // target_width >>= 10;                                    // Divide by ~ 100*10 (2^10 = 1024)
+                    
+                    /* See if the midway point of the commutate switch has been found */
+                    if(xovr_width >= target_width){
+                        ct_reg_val = 0xFFFF - Timer1CtrVal();
+                        Timer1On16b(ct_reg_val);
+                        
+                        /* Wait for the switch point to come around */
+                        while(TMR1IF);
+                        UpdateComuState();
+                        UpdateMotorOutputs();
+                        break;
+                    }
+                }
+            
+            break;
+
+            case DRV_A2B:           // XOVR is HIGH and undriven phase is C.  Need to monitor near end of pulse
+                while(true){
+                    pwm_width = 0;
+                    xovr_width = 0;
+                    while(PWM_STATE){
+                        COMU_LED = ~COMU_LED;
+                        if(CPH_CROSSED){
+                            pwm_width++;
+                            xovr_width++;
+                        }
+                        else
+                        {
+                            pwm_width++;
+                        }
+                    }
+
+                    target_width = (pwm_width * TARGET_XOVR_PRCNT);         // Multiply by target percent (x10, so 900 for 90%)
+                    target_width = (target_width >> 10);                                    // Divide by ~ 100*10 (2^10 = 1024)
+                    // target_width >>= 10;                                    // Divide by ~ 100*10 (2^10 = 1024)
+                    
+                    /* See if the midway point of the commutate switch has been found */
+                    if(xovr_width >= target_width){
+                        ct_reg_val = 0xFFFF - Timer1CtrVal();
+                        Timer1On16b(ct_reg_val);
+                        
+                        /* Wait for the switch point to come around */
+                        while(TMR1IF);
+                        UpdateComuState();
+                        UpdateMotorOutputs();
+                        break;
+                    }
+                }
+                
+            break;
+
+            case DRV_A2C:           // XOVR is LOW and undriven phase is B.  Need to monitor near begining of pulse
+                while(true){
+                    pwm_width = 0;
+                    xovr_width = 0;
+                    while(PWM_STATE){
+                        COMU_LED = ~COMU_LED;
+                        if(!BPH_CROSSED){
+                            pwm_width++;
+                            xovr_width++;
+                        }
+                        else
+                        {
+                            pwm_width++;
+                        }
+                    }
+
+                    target_width = (pwm_width * TARGET_XOVR_PRCNT);         // Multiply by target percent (x10, so 900 for 90%)
+                    target_width = (target_width >> 10);                                    // Divide by ~ 100*10 (2^10 = 1024)
+                    // target_width >>= 10;                                    // Divide by ~ 100*10 (2^10 = 1024)
+                    
+                    /* See if the midway point of the commutate switch has been found */
+                    if(xovr_width >= target_width){
+                        ct_reg_val = 0xFFFF - Timer1CtrVal();
+                        Timer1On16b(ct_reg_val);
+                        
+                        /* Wait for the switch point to come around */
+                        while(TMR1IF);
+                        UpdateComuState();
+                        UpdateMotorOutputs();
+                        break;
+                    }
+                }
+                
+            break;
+
+            case DRV_B2C:               // XOVR is HIGH and undriven phase is A.  Need to monitor near end of pulse
+                while(true){
+                    pwm_width = 0;
+                    xovr_width = 0;
+                    while(PWM_STATE){
+                        COMU_LED = ~COMU_LED;
+                        if(APH_CROSSED){
+                            pwm_width++;
+                            xovr_width++;
+                        }
+                        else
+                        {
+                            pwm_width++;
+                        }
+                    }
+
+                    target_width = (pwm_width * TARGET_XOVR_PRCNT);         // Multiply by target percent (x10, so 900 for 90%)
+                    target_width = (target_width >> 10);                                    // Divide by ~ 100*10 (2^10 = 1024)
+                    
+                    /* See if the midway point of the commutate switch has been found */
+                    if(xovr_width >= target_width){
+                        ct_reg_val = 0xFFFF - Timer1CtrVal();
+                        Timer1On16b(ct_reg_val);
+                        
+                        /* Wait for the switch point to come around */
+                        while(TMR1IF);
+                        UpdateComuState();
+                        UpdateMotorOutputs();
+                        break;
+                    }
+                }
+            break;
+        }
+    }
+
+
 }
 
 void TestCommutate(void) {

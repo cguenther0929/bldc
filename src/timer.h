@@ -43,13 +43,16 @@ void Timer0Init(uint8_t interrupts, uint16_t prescaler, uint8_t clksource ) ;
 void Timer0On( void );
 
 /********************************************************
-*FUNCTION: void Timer1Init( bool interrupts, uint8_t prescaler, bool clksource )
-*PURPOSE: To initialize timer 1
+*FUNCTION: void Timer1Init( uint8_t interrupts, uint8_t prescaler, bool clksource )
+*PURPOSE: To initialize timer 1. When reading from timer one 
+        in 16bit mode, we must read from the LOW byte first. 
+        When we write to the timer, we must write to the LOW byte
+        and then to the HIGH byte.  
 *PRECONDITION: Timer 1 not initialized
 *POSTCONDITION: Timer 1 now initialized
 *RETURN: Nothing
 ********************************************************/
-void Timer1Init( bool interrupts, uint8_t prescaler, bool clksource );
+void Timer1Init( uint8_t interrupts, uint8_t prescaler, uint8_t clksource );
 
 /********************************************************
 *FUNCTION: void Timer1On(uint8_t RegHigh, uint8_t RegLow)
@@ -69,6 +72,24 @@ void Timer1On(uint8_t RegHigh, uint8_t RegLow);
 *RETURN: Nothing
 ********************************************************/
 void Timer1Off( void );
+
+/********************************************************
+*FUNCTION: uint16_t Timer1CtrVal( void )
+*PURPOSE: To return the contents (16 bits) of timer 1's register
+*PRECONDITION: Timer1 likely initialized
+*POSTCONDITION: Timer1's register value (16 bit) is returned
+*RETURN: Timer1's register value (16 bit) is returned
+********************************************************/
+uint16_t Timer1CtrVal( void );
+
+/********************************************************
+*FUNCTION: void Timer1CtrVal( uint16_t CtrRegVal )
+*PURPOSE: Pass in 16b value and load timer 1's High/Low Register
+*PRECONDITION: Timer1 likely initialized
+*POSTCONDITION: Timer1's high/low registers are loaded
+*RETURN: Nothing
+********************************************************/
+void Timer1On16b(uint16_t CtrRegVal);
 
 /********************************************************
 *FUNCTION: void Timer2Init( bool interrupts, uint8_t prescaler, uint8_t postscaler )
@@ -137,7 +158,11 @@ void Timer4Init( bool interrupts, uint8_t prescaler, uint8_t clksource );
 
 /********************************************************
 *FUNCTION: void Timer4On(uint8_t period)
-*PURPOSE: To turn ON timer 4
+*PURPOSE: To turn ON timer 4.  The perior register will 
+        count up from 0x00 until the count value equals
+        the user-defined period value.  At this point,
+        the interrupt is triggered and the timer value 
+        automatically reset.  
 *PRECONDITION: Timer 4 is not running
 *POSTCONDITION: Timer 4 now running with overflow period 
                 defined by period register and pre/post scaler

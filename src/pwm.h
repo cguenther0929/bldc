@@ -31,7 +31,7 @@ the compiler appears to typecast and truncate properly when necessary.  Let the 
 by including decimals in our constants (i.e. 1.0 vs 1) */
 
 #define Processor_Oscillator_Freq   32768000            //User modified value
-#define PWM_Frequency               45000               //User modified value
+#define PWM_Frequency               20000               //User modified value
 #define PWM_Timer_Prescaler         4                   //User modified value
 #define Processor_TOSC              (1.0/Processor_Oscillator_Freq)
 #define PWM_Duty_Cycle_Constant     (PWM_Frequency*100.0*Processor_TOSC*PWM_Timer_Prescaler)               //Math correct -- compared to datasheet 266/550

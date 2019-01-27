@@ -40,6 +40,8 @@
 #define INTS_PER_REV                    (6*POLE_PAIRS)
 #define TICKS_SCALER                    ((60.0*T4_OSC)/INTS_PER_REV)   //Pre-processor calculation for determineing oscillator ticks
 
+#define MIN_CTR_TICKS                   50                            // Counter value must be at least this high before we start looking for XOVRS
+
 /* DEFINE CODE VERSION NUMBER */
 #define MAJVER              0x00
 #define MINVER              0x00
@@ -51,6 +53,7 @@
 #define CPH_CROSSED         PORTBbits.RB2           // Digital input indicating C phase crossed
 
 #define MOT_PWM             LATCbits.LATC2          // Motor PWM
+#define PWM_STATE           PORTCbits.RC2           // Read port pin to determine if output is high or low
 
 #define AHI_DRV             LATEbits.LATE0          // Control inputs for high-side/low-side drivers
 #define BHI_DRV             LATEbits.LATE1
@@ -124,10 +127,11 @@
 #define NORMAL_RUN          3
 
 /* VARIOUS MOTOR PARAMETERS */
-#define OL_RAMP_RATE        20          //Increase the RPM value by this much every 500us 
-#define OL_MAX_RPM          2000        //When this RPM value is achieved in OL start, transition to closed-loop run
-#define START_RPM           180         //Open loop start task will use this as the starting RPM -- ramps up from here
-#define START_DUTY          10          //Duty cycle percent for when starting motor
+#define OL_RAMP_RATE        20          // Increase the RPM value by this much every 500us 
+#define OL_MAX_RPM          2000        // When this RPM value is achieved in OL start, transition to closed-loop run
+#define START_RPM           180         // Starting RPM.  Number really needs to be larger than 180.  
+#define START_DUTY          10          // Duty cycle percent for when starting motor
+#define TARGET_XOVR_PRCNT   920         // Percentage of crossover width as compared to PWM high pulse, times 10 (so for 90% == ~ 900/1024)
 
 /* LED CONTROL */
 #define ledon               0

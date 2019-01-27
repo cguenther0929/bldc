@@ -104,7 +104,7 @@ void Timer0Init(uint8_t interrupts, uint16_t prescaler, uint8_t clksource ) {
 }
 
 //TODO  Remove this note -- this will be the timer to count ticks between commutate and crossover
-void Timer1Init( bool interrupts, uint8_t prescaler, bool clksource ) {
+void Timer1Init( uint8_t interrupts, uint8_t prescaler, uint8_t clksource ) {
     
     T1CONbits.RD16 = 1;               //Allow 16 bits to be written to the timer register at at once.  
     switch(interrupts){
@@ -163,13 +163,26 @@ void Timer1Init( bool interrupts, uint8_t prescaler, bool clksource ) {
 }
 
 void Timer1On(uint8_t RegHigh, uint8_t RegLow){
-    TMR1H = RegHigh;                   //Load the low register for the timer
-    TMR1L = RegLow;                   //Load the high register for the timer
-    T1CONbits.TMR1ON = 1;                     //Set the bit to turn on the timer
+    TMR1H = RegHigh;                    // Load the low register for the timer
+    TMR1L = RegLow;                     // Load the high register for the timer
+    T1CONbits.TMR1ON = 1;               // Set the bit to turn on the timer
+}
+
+void Timer1On16b(uint16_t CtrRegVal){
+    TMR1H = (uint8_t)((CtrRegVal >> 8) & 0x00FF);                   // Load eight bits of high byte
+    TMR1L = (uint8_t)(CtrRegVal & 0x00FF);                          // Load eight bits of low byte 
+    T1CONbits.TMR1ON = 1;               // Set the bit to turn on the timer
 }
 
 void Timer1Off( void ){
     TMR1ON = 0;                     //Turn the timer off
+}
+
+uint16_t Timer1CtrVal( void ){
+    uint16_t rtnval = 0x0000;
+    rtnval = TMR1L;
+    rtnval = (uint16_t)((TMR1H << 8) | rtnval);
+    return rtnval;
 }
 
 void Timer2On( uint8_t period ){
